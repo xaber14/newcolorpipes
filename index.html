@@ -1,0 +1,101 @@
+<!--
+  Color Pipes
+  Cara menjalankan:
+  1. Buka file index.html langsung di browser modern.
+  2. Tidak perlu server, backend, build step, atau library eksternal.
+-->
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Pipes</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema">Tema: Dark</button>
+    <main class="app-shell">
+      <section id="menuScreen" class="screen screen-active">
+        <div class="brand-panel">
+          <p class="eyebrow">Original puzzle</p>
+          <h1>Color Pipes</h1>
+          <p class="intro">
+            Hubungkan pasangan warna, isi seluruh papan, dan jaga agar jalur tidak saling bertabrakan.
+          </p>
+          <div class="menu-actions">
+            <button id="playButton" class="primary-button">Main</button>
+            <button id="levelsButton" class="secondary-button">Pilih Level</button>
+          </div>
+        </div>
+        <div class="stats-strip" aria-label="Progress pemain">
+          <div>
+            <span id="completedCount">0</span>
+            <small>selesai</small>
+          </div>
+          <div>
+            <span id="bestTime">--:--</span>
+            <small>waktu terbaik</small>
+          </div>
+          <div>
+            <span id="bestMoves">--</span>
+            <small>move terbaik</small>
+          </div>
+        </div>
+      </section>
+
+      <section id="levelScreen" class="screen" aria-labelledby="levelTitle">
+        <header class="topbar">
+          <button id="levelHomeButton" class="icon-button" aria-label="Kembali ke menu">⌂</button>
+          <div>
+            <p class="eyebrow">Pilih tantangan</p>
+            <h2 id="levelTitle">Level</h2>
+          </div>
+        </header>
+        <div id="levelList" class="level-list"></div>
+      </section>
+
+      <section id="gameScreen" class="screen" aria-labelledby="gameTitle">
+        <header class="topbar game-topbar">
+          <button id="gameHomeButton" class="icon-button" aria-label="Kembali ke menu">⌂</button>
+          <div class="level-heading">
+            <p id="difficultyLabel" class="eyebrow">Mudah</p>
+            <h2 id="gameTitle">Level 1</h2>
+          </div>
+          <div class="tool-buttons">
+            <button id="undoButton" class="icon-button" aria-label="Undo">↶</button>
+            <button id="resetButton" class="icon-button" aria-label="Reset level">↻</button>
+          </div>
+        </header>
+
+        <div class="hud">
+          <div>
+            <span id="timer">00:00</span>
+            <small>timer</small>
+          </div>
+          <div>
+            <span id="moves">0</span>
+            <small>moves</small>
+          </div>
+          <div>
+            <span id="fillInfo">0/0</span>
+            <small>terisi</small>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="Papan permainan Color Pipes"></div>
+          <div id="completeOverlay" class="complete-overlay" aria-live="polite">
+            <div class="complete-dialog">
+              <div class="complete-badge">✓</div>
+              <h3>Level Selesai</h3>
+              <p id="completeStats">00:00 · 0 moves</p>
+              <button id="nextButton" class="primary-button">Level Berikutnya</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
