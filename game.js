@@ -221,6 +221,7 @@ const LEVELS = [
 const STORAGE_KEY = "colorPipesProgressV2";
 const THEME_KEY = "colorPipesTheme";
 const board = document.getElementById("board");
+const confettiLayer = document.getElementById("confettiLayer");
 const screens = {
   menu: document.getElementById("menuScreen"),
   levels: document.getElementById("levelScreen"),
@@ -236,6 +237,11 @@ let elapsed = 0;
 let timerId = null;
 let progress = loadProgress();
 let theme = loadTheme();
+let audioContext = null;
+let audioUnlocked = false;
+let menuMusicTimer = null;
+let menuMusicGain = null;
+let victoryTimers = [];
 
 const endpointMap = new Map();
 
@@ -250,6 +256,8 @@ document.getElementById("nextButton").addEventListener("click", () => {
   const next = Math.min(currentLevel + 1, LEVELS.length - 1);
   openLevel(next);
 });
+document.addEventListener("pointerdown", unlockAudio, { once: true });
+document.addEventListener("keydown", unlockAudio, { once: true });
 
 renderLevelList();
 applyTheme();
@@ -262,17 +270,26 @@ function showScreen(name) {
 
 function showMenu() {
   stopTimer();
+  stopVictoryMusic();
+  clearConfetti();
   updateMenuStats();
   showScreen("menu");
+  startMenuMusic();
 }
 
 function showLevels() {
   stopTimer();
+  stopVictoryMusic();
+  clearConfetti();
   renderLevelList();
   showScreen("levels");
+  startMenuMusic();
 }
 
 function openLevel(index) {
+  stopMenuMusic();
+  stopVictoryMusic();
+  clearConfetti();
   currentLevel = index;
   resetLevelState();
   renderBoard();
@@ -370,8 +387,11 @@ function endPath() {
 
   const color = active.color;
   const path = paths[color];
-  if (!isColorConnected(color)) {
+  const connectedNow = isColorConnected(color);
+  if (!connectedNow) {
     paths[color] = [path[0]];
+  } else {
+    playConnectSound();
   }
 
   active = null;
@@ -383,6 +403,9 @@ function endPath() {
 
 function resetLevel() {
   pushHistory();
+  stopVictoryMusic();
+  clearConfetti();
+  document.getElementById("completeOverlay").classList.remove("show");
   resetLevelState(false);
   renderBoard();
   updateHud();
@@ -396,6 +419,8 @@ function undoMove() {
   moves = snapshot.moves;
   elapsed = snapshot.elapsed;
   active = null;
+  stopVictoryMusic();
+  clearConfetti();
   document.getElementById("completeOverlay").classList.remove("show");
   startTimer();
   paintBoard();
@@ -409,9 +434,12 @@ function checkWin() {
 
   if (connected && filled) {
     stopTimer();
+    stopMenuMusic();
+    playVictoryMusic();
     saveProgress();
     document.getElementById("completeStats").textContent = `${formatTime(elapsed)} · ${moves} moves`;
     document.getElementById("completeOverlay").classList.add("show");
+    launchConfetti();
     renderLevelList();
   }
 }
@@ -585,6 +613,140 @@ function loadTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   if (saved === "light" || saved === "dark") return saved;
   return "dark";
+}
+
+function unlockAudio() {
+  const context = getAudioContext();
+  if (!context) return;
+  context.resume?.();
+  audioUnlocked = true;
+  if (screens.menu.classList.contains("screen-active") || screens.levels.classList.contains("screen-active")) {
+    startMenuMusic();
+  }
+}
+
+function getAudioContext() {
+  if (audioContext) return audioContext;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  audioContext = new AudioContextClass();
+  return audioContext;
+}
+
+function startMenuMusic() {
+  if (!audioUnlocked || menuMusicTimer) return;
+  const context = getAudioContext();
+  if (!context) return;
+
+  menuMusicGain = context.createGain();
+  menuMusicGain.gain.value = 0.026;
+  menuMusicGain.connect(context.destination);
+
+  const notes = [196, 246.94, 293.66, 392, 329.63, 293.66, 246.94, 293.66];
+  let step = 0;
+  const playStep = () => {
+    if (!menuMusicGain) return;
+    const now = context.currentTime;
+    playTone(notes[step % notes.length], now, 0.22, "triangle", 0.7, menuMusicGain);
+    playTone(notes[(step + 2) % notes.length] / 2, now, 0.34, "sine", 0.45, menuMusicGain);
+    step += 1;
+  };
+
+  playStep();
+  menuMusicTimer = setInterval(playStep, 420);
+}
+
+function stopMenuMusic() {
+  if (menuMusicTimer) clearInterval(menuMusicTimer);
+  menuMusicTimer = null;
+  if (menuMusicGain && audioContext) {
+    menuMusicGain.gain.setTargetAtTime(0, audioContext.currentTime, 0.08);
+    const gain = menuMusicGain;
+    setTimeout(() => gain.disconnect(), 220);
+  }
+  menuMusicGain = null;
+}
+
+function playConnectSound() {
+  if (!audioUnlocked) return;
+  const context = getAudioContext();
+  if (!context) return;
+  const now = context.currentTime;
+  playTone(523.25, now, 0.08, "sine", 0.07);
+  playTone(783.99, now + 0.055, 0.12, "triangle", 0.08);
+}
+
+function playVictoryMusic() {
+  if (!audioUnlocked) return;
+  stopVictoryMusic();
+  const melody = [
+    [0, 523.25],
+    [120, 659.25],
+    [240, 783.99],
+    [420, 1046.5],
+    [620, 987.77],
+    [800, 1046.5]
+  ];
+  melody.forEach(([delay, frequency]) => {
+    const timer = setTimeout(() => {
+      const context = getAudioContext();
+      if (!context) return;
+      const now = context.currentTime;
+      playTone(frequency, now, 0.18, "triangle", 0.12);
+      playTone(frequency / 2, now, 0.24, "sine", 0.07);
+    }, delay);
+    victoryTimers.push(timer);
+  });
+}
+
+function stopVictoryMusic() {
+  victoryTimers.forEach((timer) => clearTimeout(timer));
+  victoryTimers = [];
+}
+
+function playTone(frequency, startTime, duration, type, volume, destination = null) {
+  const context = getAudioContext();
+  if (!context) return;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+  oscillator.connect(gain);
+  gain.connect(destination || context.destination);
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration + 0.03);
+}
+
+function launchConfetti() {
+  clearConfetti();
+  const colors = ["#facc15", "#22c55e", "#38bdf8", "#ec4899", "#a855f7", "#f97316", "#ef4444"];
+  const fragment = document.createDocumentFragment();
+  const fall = `${confettiLayer.offsetHeight + 90}px`;
+
+  for (let index = 0; index < 90; index += 1) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.setProperty("--x", `${Math.random() * 100}%`);
+    piece.style.setProperty("--w", `${5 + Math.random() * 7}px`);
+    piece.style.setProperty("--h", `${8 + Math.random() * 12}px`);
+    piece.style.setProperty("--drift", `${(Math.random() - 0.5) * 230}px`);
+    piece.style.setProperty("--fall", fall);
+    piece.style.setProperty("--rotate", `${Math.random() * 360}deg`);
+    piece.style.setProperty("--delay", `${Math.random() * 0.35}s`);
+    piece.style.setProperty("--duration", `${1.9 + Math.random() * 1.3}s`);
+    piece.style.setProperty("--confetti-color", colors[index % colors.length]);
+    fragment.appendChild(piece);
+  }
+
+  confettiLayer.appendChild(fragment);
+  setTimeout(clearConfetti, 3600);
+}
+
+function clearConfetti() {
+  confettiLayer.replaceChildren();
 }
 
 function startTimer() {
