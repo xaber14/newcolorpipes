@@ -145,6 +145,76 @@ const LEVELS = [
       cyan: [[6, 0], [6, 4]],
       pink: [[6, 5], [6, 6]]
     }
+  },
+  {
+    size: 8,
+    difficulty: "Sulit",
+    pairs: {
+      red: [[0, 0], [1, 5]],
+      blue: [[1, 4], [2, 2]],
+      green: [[2, 3], [3, 4]],
+      yellow: [[3, 3], [4, 4]],
+      purple: [[4, 5], [5, 2]],
+      orange: [[5, 1], [6, 5]],
+      cyan: [[6, 6], [7, 3]],
+      pink: [[7, 2], [7, 0]]
+    }
+  },
+  {
+    size: 9,
+    difficulty: "Ahli",
+    pairs: {
+      red: [[0, 0], [1, 6]],
+      blue: [[1, 5], [2, 4]],
+      green: [[2, 5], [3, 3]],
+      yellow: [[3, 2], [4, 7]],
+      purple: [[4, 8], [5, 0]],
+      orange: [[6, 0], [7, 8]],
+      cyan: [[7, 7], [8, 1]],
+      pink: [[8, 2], [8, 8]]
+    }
+  },
+  {
+    size: 10,
+    difficulty: "Ahli",
+    pairs: {
+      red: [[0, 0], [1, 6]],
+      blue: [[1, 5], [2, 5]],
+      green: [[2, 6], [3, 1]],
+      yellow: [[3, 0], [5, 9]],
+      purple: [[5, 8], [6, 3]],
+      orange: [[6, 4], [7, 4]],
+      cyan: [[7, 3], [8, 8]],
+      pink: [[8, 9], [9, 0]]
+    }
+  },
+  {
+    size: 11,
+    difficulty: "Master",
+    pairs: {
+      red: [[0, 0], [1, 6]],
+      blue: [[1, 5], [2, 9]],
+      green: [[2, 10], [4, 2]],
+      yellow: [[4, 3], [5, 3]],
+      purple: [[5, 2], [7, 10]],
+      orange: [[7, 9], [8, 5]],
+      cyan: [[8, 6], [9, 1]],
+      pink: [[9, 0], [10, 10]]
+    }
+  },
+  {
+    size: 12,
+    difficulty: "Master",
+    pairs: {
+      red: [[0, 0], [1, 5]],
+      blue: [[1, 4], [3, 11]],
+      green: [[3, 10], [4, 6]],
+      yellow: [[4, 7], [6, 0]],
+      purple: [[6, 1], [7, 5]],
+      orange: [[7, 4], [9, 11]],
+      cyan: [[9, 10], [10, 6]],
+      pink: [[10, 7], [11, 0]]
+    }
   }
 ];
 
@@ -391,6 +461,8 @@ function paintBoard() {
     const pipe = cell.querySelector(".pipe");
 
     cell.className = "cell";
+    if (col === level.size - 1) cell.classList.add("edge-right");
+    if (row === level.size - 1) cell.classList.add("edge-bottom");
     pipe.className = "pipe";
     cell.style.setProperty("--path-color", color ? COLORS[color] : "transparent");
     if (pathColor) {

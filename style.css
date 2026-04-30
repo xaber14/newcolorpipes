@@ -495,7 +495,12 @@ small {
   box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.8), 0 0 18px rgba(34, 211, 238, 0.24);
 }
 
-.board-7 {
+.board-7,
+.board-8,
+.board-9,
+.board-10,
+.board-11,
+.board-12 {
   box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.9), 0 0 18px rgba(250, 204, 21, 0.28);
 }
 
@@ -606,15 +611,11 @@ small {
   outline-offset: -2px;
 }
 
-.board-5 .cell:nth-child(5n),
-.board-6 .cell:nth-child(6n),
-.board-7 .cell:nth-child(7n) {
+.cell.edge-right {
   border-right: 0;
 }
 
-.board-5 .cell:nth-last-child(-n + 5),
-.board-6 .cell:nth-last-child(-n + 6),
-.board-7 .cell:nth-last-child(-n + 7) {
+.cell.edge-bottom {
   border-bottom: 0;
 }
 
